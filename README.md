@@ -1,0 +1,1 @@
+# Eqemu_set_bonus_plugin
