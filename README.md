@@ -1,4 +1,8 @@
-# Eqemu_set_bonus_plugin
+# **NEW FEATURES** #
+
+## **Bots and pets can now benefit from item set bonus**
+
+# Eqemu_set_bonus_plugin # **(see below for directions)**
 
 A server-side EQEmu plugin that grants set-bonus focus effects (buff spells) when a player equips items belonging to defined sets.
 
@@ -46,12 +50,50 @@ Ensure your world server has access to the DB configuration tables (see schema b
 Add the event hooks to your global player script:
 
 ```perl
-sub EVENT_EQUIP_ITEM_CLIENT {
-    plugin::set_focus_update(debug => 0);
+sub EVENT_ENTERZONE {
+    quest::settimer("setfocus", 2);
+    plugin::set_focus_update();
 }
 
+sub EVENT_TIMER {
+    if ($timer eq "setfocus") {
+        plugin::set_focus_update();
+    }
+
+sub EVENT_EQUIP_ITEM_CLIENT {
+  return unless $client;
+
+  return if quest::get_data("sf_equip_cd:" . $client->CharacterID());
+  quest::set_data("sf_equip_cd:" . $client->CharacterID(), 1, 1);
+
+  plugin::set_focus_update();
+  }
+
 sub EVENT_UNEQUIP_ITEM_CLIENT {
-    plugin::set_focus_update(debug => 0);
+  return unless $client;
+
+  return if quest::get_data("sf_equip_cd:" . $client->CharacterID());
+  quest::set_data("sf_equip_cd:" . $client->CharacterID(), 1, 1);
+
+  plugin::set_focus_update();
+  }    
+```
+
+Add the event hooks to your global npc script:
+
+```
+sub EVENT_SPAWN {
+    if ($npc->IsPet()) {
+    quest::settimer("sf_pet_tick", 5);
+  }
+
+sub EVENT_TIMER  {
+        if ($timer eq "sf_pet_tick") {
+        return unless $npc->IsPet();
+
+        # Pet gets evaluated independently
+        plugin::set_focus_pet_tick(pet => $npc);
+        }
 }
 ```
 
